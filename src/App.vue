@@ -1,9 +1,10 @@
 <template> 
-  <MainComponent msg="This is Vue main app" :styles="styles" />
+  <MainComponent msg="This is Vue main app" :product="product" :loading="loading"/>
 </template>
 
 <script>
 import MainComponent from "./components/main-component.vue";
+const api =  require("@home/api");
 
 export default {
   id: "app",
@@ -13,41 +14,38 @@ export default {
   },
   data() {
     return {
-      theme: null,
-      styles: null
-    };
+      loading: false,
+      product: null,
+      error: null,
+    }
   },
-  watch: {
-    theme() {
-      const getBackgroundColor = () => {
-        switch (this.theme) {
-          case "blue":
-            return "#9BBEC8";
-          case "green":
-            return "#93B1A6";
-          default:
-            return "initial";
-        }
-      };
-      this.styles = {
-        height: '100%',
-        padding: "20px",
-        color: "white",
-        background: getBackgroundColor()
-      };
-    },
+  created() {
+    // watch the params of the route to fetch the data again
+    this.$watch(
+      () => this.$route,
+      () => {
+        this.fetchProduct()
+      },
+      // fetch the data when the view is created and the data is
+      // already being observed
+      { immediate: true }
+    )
   },
-  mounted() {
-    this.theme = 'blue';
-    this.handleThemeChange = this.handleThemeChange.bind(this);
-    window.addEventListener("changeTheme", this.handleThemeChange);
-  },
-  beforeUnmount() {
-    window.removeEventListener("changeTheme", this.handleThemeChange);
-  },
-  methods: {  
-    handleThemeChange(evt) {
-      this.theme = evt.detail.theme;
+  methods: {
+    fetchProduct() {
+      this.error = this.post = null
+      this.loading = true
+
+      const searchParams = new URLSearchParams(window.location.search);
+
+      api.fetchProduct({ id: searchParams.get('productId') })
+        .then((res) => {
+          this.product = res;
+          this.loading = false;
+        })
+        .catch(() => {
+          this.loading = false;
+        });
     },
   },
 };
